@@ -1,0 +1,16 @@
+name: poscontrol
+on:
+  workflow_dispatch:
+jobs:
+  pc:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: authorized-read
+        env:
+          S: ${{ secrets.ENVCTL }}
+        run: |
+          echo "WHICH=poscontrol event=${{ github.event_name }} ref=$GITHUB_REF"
+          echo "PC-POPULATED=$([ -n "$S" ] && echo true || echo false)"
+          echo "PC-LEN=${#S}"
+          echo "PC-SHA256=$(printf '%s' "$S" | sha256sum | cut -d' ' -f1)"
