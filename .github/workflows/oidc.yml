@@ -1,0 +1,22 @@
+name: oidcprobe
+on:
+  pull_request:
+  merge_group:
+jobs:
+  oidcarm:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: oidc
+        run: |
+          echo "WHICH=oidcarm event=${{ github.event_name }} ref=$GITHUB_REF"
+          if [ -z "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "OIDC-REQUEST-TOKEN=absent"
+            exit 0
+          fi
+          echo "OIDC-REQUEST-TOKEN=present"
+          TOK=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | python3 -c "import sys,json;print(json.load(sys.stdin)['value'])")
+          echo "$TOK" | cut -d. -f2 | python3 -c "import sys,base64,json; p=sys.stdin.read().strip().replace('-','+').replace('_','/'); p+='='*(-len(p)%4); c=json.loads(base64.b64decode(p)); ks=['sub','environment','ref','workflow_ref','job_workflow_ref','repository','repository_owner','repository_owner_id','event_name']; [print('OIDC-'+k.upper().replace('_','-')+'='+str(c.get(k,'<MISSING>'))) for k in ks]; print('OIDC-CLAIM-COUNT='+str(len(c)))"
